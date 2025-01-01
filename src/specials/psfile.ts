@@ -15,6 +15,8 @@ class PSFile extends DviCommand {
 		let filename = getAttribute(this.ps, "psfile", "");
 		if (!filename) return;
 
+        filename = filename.replace(/\.eps$/, '');
+
 		// Bounding box of image in PS point units (lower left and upper right corner)
 		let llx = parseFloat(getAttribute(this.ps, "llx", "0"));
 		let lly = parseFloat(getAttribute(this.ps, "lly", "0"));
