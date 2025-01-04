@@ -16,14 +16,16 @@ put together for my own benefit (sourced from a few different online pages).
 ### TODO
 
 - [x] DVI Parser
-- [X] TFM Parser
-- [X] Metric management (right now, fonts are found using `kpsewhich`)
-- [X] HTML/CSS/JS conversion
+- [x] TFM Parser
+- [x] Metric management (right now, fonts are found using `kpsewhich`)
+- [x] HTML/CSS/JS conversion
 
 # Building
 
 Run
+
 ```
 npm install
 ```
+
 Not that this will automatically run `npm run build` after all node packages are installed.

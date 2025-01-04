@@ -1,128 +1,123 @@
-//  var path = execSync('kpsewhich ' + name + '.tfm').toString().split("\n")[0];
-
 import { Tfm } from './tfm/tfm';
 import { loadFont } from './tfm/index';
 import Matrix from './matrix';
 
 export interface Rule {
-  a : number;
-  b : number;
+    a: number;
+    b: number;
 }
 
 class Position {
-  h: number;
-  v: number;
-  w: number;
-  x: number;
-  y: number;
-  z: number;
-  
-  constructor(properties? : Position) {
-    if (properties) {
-      this.h = properties.h;
-      this.v = properties.v;
-      this.w = properties.w;
-      this.x = properties.x;
-      this.y = properties.y;
-      this.z = properties.z;
-    } else {
-      this.h = this.v = this.w = this.x = this.y = this.z = 0;      
+    h: number;
+    v: number;
+    w: number;
+    x: number;
+    y: number;
+    z: number;
+
+    constructor(properties?: Position) {
+        if (properties) {
+            this.h = properties.h;
+            this.v = properties.v;
+            this.w = properties.w;
+            this.x = properties.x;
+            this.y = properties.y;
+            this.z = properties.z;
+        } else {
+            this.h = this.v = this.w = this.x = this.y = this.z = 0;
+        }
     }
-  }
 }
 
 export class DviFont {
-  name: string;
-  checksum: number;
-  scaleFactor: number;
-  designSize: number;
-  metrics: Tfm;
-  
-  constructor(properties : DviFont) {
-    this.name = properties.name;
-    this.checksum = properties.checksum;
-    this.scaleFactor = properties.scaleFactor;
-    this.designSize = properties.designSize;
-  }
+    name: string;
+    checksum: number;
+    scaleFactor: number;
+    designSize: number;
+    metrics: Tfm;
+
+    constructor(properties: DviFont) {
+        this.name = properties.name;
+        this.checksum = properties.checksum;
+        this.scaleFactor = properties.scaleFactor;
+        this.designSize = properties.designSize;
+    }
 }
 
 export class Machine {
-  fonts : DviFont[];
-  font : DviFont;
-  stack : Position[];
-  position : Position;
-  matrix: Matrix;
+    fonts: DviFont[];
+    font: DviFont;
+    stack: Position[];
+    position: Position;
+    matrix: Matrix;
 
-  constructor () {
-    this.fonts = [];
-	this.matrix = new Matrix();
-  }
-  
-  preamble ( numerator : number, denominator : number, magnification : number, comment : string ) {
-  }
+    constructor() {
+        this.fonts = [];
+        this.matrix = new Matrix();
+    }
 
-  pushColor( c : string ) {
-  }
+    preamble(_numerator: number, _denominator: number, _magnification: number, _comment: string) {}
 
-  popColor( ) {
-  }  
+    pushColor(_c: string) {}
 
-  setPapersize( width : number, height : number ) {
-  }
-    
-  push() {
-    this.stack.push(new Position(this.position));
-  }
+    popColor() {}
 
-  pop() {
-    this.position = this.stack.pop();
-  }
+    setPapersize(_width: number, _height: number) {}
 
-  beginPage( page : any ) {
-    this.stack = [];
-    this.position = new Position();
-  }
+    push() {
+        this.stack.push(new Position(this.position));
+    }
 
-  endPage() { }  
+    pop() {
+        this.position = this.stack.pop();
+    }
 
-  post( p : any ) { }
-  
-  postPost( p : any ) { }
+    beginPage(_page: any) {
+        this.stack = [];
+        this.position = new Position();
+    }
 
-  getCurrentPosition(): [number, number] { return [this.position.h, this.position.v]; }
-  
-  setCurrentPosition(x: number, y: number) { this.position.h = x; this.position.v = y; }
+    endPage() {}
 
-  putRule( rule : Rule ) {
-  }
+    post(_p: any) {}
 
-  moveRight( distance : number ) {
-    this.position.h += distance;
-  }
+    postPost(_p: any) {}
 
-  moveDown( distance : number ) {
-    this.position.v += distance;
-  }
+    getCurrentPosition(): [number, number] {
+        return [this.position.h, this.position.v];
+    }
 
-  setFont( font : DviFont ) {
-    this.font = font;
-  }
+    setCurrentPosition(x: number, y: number) {
+        this.position.h = x;
+        this.position.v = y;
+    }
 
-  putSVG( svg : string ) {
-  }
+    putRule(_rule: Rule) {}
 
-  putHTML( html : string ) {
-  }
-  
-  // Returns the width of the text
-  putText( text : Buffer ) : number {
-    return 0;
-  }  
+    moveRight(distance: number) {
+        this.position.h += distance;
+    }
 
-  loadFont( properties : any ) : DviFont {
-    var f = new DviFont(properties);
-    f.metrics = loadFont(properties.name);
-    return f;
-  }
+    moveDown(distance: number) {
+        this.position.v += distance;
+    }
+
+    setFont(font: DviFont) {
+        this.font = font;
+    }
+
+    putSVG(_svg: string) {}
+
+    putHTML(_html: string) {}
+
+    // Returns the width of the text
+    putText(_text: Buffer): number {
+        return 0;
+    }
+
+    loadFont(properties: any): DviFont {
+        const f = new DviFont(properties);
+        f.metrics = loadFont(properties.name);
+        return f;
+    }
 }
-

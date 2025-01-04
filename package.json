@@ -1,23 +1,26 @@
 {
-  "name": "dvi2html",
-  "version": "0.0.6",
-  "description": "Convert DVI to HTML5/CSS",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "scripts": {
-    "prepare": "npm run build",
-    "build": "node tools/tfm2json.js && tsc"
-  },
-  "files": [
-    "lib/**/*"
-  ],
-  "author": "Jim Fowler",
-  "license": "GPL-3.0",
-  "dependencies": {
-    "buffer": "^6.0.3"
-  },
-  "devDependencies": {
-    "@types/node": "^20.8.10",
-    "typescript": "^5.2.2"
-  }
+    "name": "dvi2html",
+    "version": "0.0.6",
+    "description": "Convert DVI to HTML5/CSS",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "scripts": {
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "prepare": "npm run build",
+        "build": "node tools/tfm2json.js && tsc"
+    },
+    "files": [
+        "lib/**/*"
+    ],
+    "author": "Jim Fowler",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "buffer": "^6.0.3"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.5",
+        "prettier": "^3.4.2",
+        "typescript": "^5.7.2"
+    }
 }

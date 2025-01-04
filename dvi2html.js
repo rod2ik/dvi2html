@@ -1,26 +1,28 @@
-var fs = require('fs');
-var dvi2html = require('./lib').dvi2html;
-var Writable = require('stream').Writable;
+const fs = require('fs');
+const dvi2html = require('./lib').dvi2html;
+const Writable = require('stream').Writable;
 
-let filename = process.argv[2];
-let stream = fs.createReadStream(filename, { highWaterMark: 256 });
+const filename = process.argv[2];
+const stream = fs.createReadStream(filename, { highWaterMark: 256 });
 
-let svg = "";
+let svg = '';
 const myWritable = new Writable({
-	write(chunk, encoding, callback) {
-		svg += chunk.toString();
-		callback();
-	}
+    write(chunk, _encoding, callback) {
+        svg += chunk.toString();
+        callback();
+    }
 });
 
 (async () => {
-	await dvi2html(stream, myWritable);
-	fs.writeFileSync(filename.replace(/\.dvi$/, ".html"), `<!DOCTYPE html>
-<html>
+    await dvi2html(stream, myWritable);
+    fs.writeFileSync(
+        filename.replace(/\.dvi$/, '.html'),
+        `<!DOCTYPE html>
+<html lang="en-US">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>DVI2HTML Testing ${filename.replace(/\.dvi$/, "")}</title>
+<title>DVI2HTML Testing ${filename.replace(/\.dvi$/, '')}</title>
 <link rel="stylesheet" type="text/css" href="dist/fonts.css">
 <style>
 .svg-container {
@@ -32,6 +34,7 @@ const myWritable = new Writable({
 }
 .svg-container svg { overflow: visible; }
 </style>
+</head>
 <body>
 <div class="svg-container">
 	${svg}
@@ -39,5 +42,5 @@ const myWritable = new Writable({
 </body>
 </html>
 `
-	);
+    );
 })();
