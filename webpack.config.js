@@ -30,7 +30,7 @@ export default (_env, argv) => {
         },
         plugins: [new ESLintPlugin({ configType: 'flat' })],
         optimization: {
-            minimize: true,
+            minimize: process.env.NODE_ENV === 'development' ? false : true,
             minimizer: [new TerserPlugin({ terserOptions: { format: { comments: false } }, extractComments: false })]
         },
         performance: { hints: false }
