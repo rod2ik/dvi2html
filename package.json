@@ -1,6 +1,6 @@
 {
     "name": "@drgrice1/dvi2html",
-    "version": "0.0.7-beta1",
+    "version": "0.0.7-beta2",
     "description": "Convert DVI to HTML5/CSS",
     "author": "Jim Fowler",
     "license": "GPL-3.0",
@@ -23,10 +23,11 @@
         "format:check": "prettier --check .",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
-        "build:fonts": "node tools/tfm2json.js",
+        "build:fonts": "NODE_NO_WARNINGS=1 node tools/tfm2json.js",
+        "build:glyphs": "NODE_NO_WARNINGS=1 node tools/glyphs.js",
         "build:lib:dev": "webpack",
         "build:lib": "webpack --mode production",
-        "build": "npm run build:fonts && npm run build:lib"
+        "build": "npm run build:fonts && npm run build:glyphs && npm run build:lib"
     },
     "files": [
         "dist/**/*"

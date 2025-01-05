@@ -2,5 +2,6 @@
 node_modules
 dist
 src/tfm/fonts.json
+src/tfm/encodings.json
 .vim
 misc

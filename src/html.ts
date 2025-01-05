@@ -2,6 +2,9 @@ import type { Buffer } from 'buffer';
 import { Machine, type Rule } from './machine';
 import type { Writable } from 'stream';
 
+import * as glyphs from './tfm/encodings.json';
+import * as fontlist from '../tools/fontlist.json';
+
 export default class HTMLMachine extends Machine {
     output: Writable;
     pointsPerDviUnit = 0;
@@ -109,23 +112,17 @@ export default class HTMLMachine extends Machine {
         let htmlText = '';
 
         for (const c of text) {
-            let metrics = this.font.metrics.characters.get(c);
-            if (metrics === undefined) {
-                //TODO: Handle this better. Error only happens for c === 127
-                console.error(`Could not find font metric for ${c.toString()}`);
-                metrics = this.font.metrics.characters.get(126);
-            }
+            const metrics = this.font.metrics.characters.get(c);
+            if (metrics === undefined) throw new Error(`Could not find font metric for ${c.toString()}`);
 
-            textWidth += metrics?.width ?? 0;
-            textHeight = Math.max(textHeight, metrics?.height ?? 0);
-            textDepth = Math.max(textDepth, metrics?.depth ?? 0);
+            textWidth += metrics.width;
+            textHeight = Math.max(textHeight, metrics.height);
+            textDepth = Math.max(textDepth, metrics.depth);
 
-            if (c >= 0 && c <= 9) htmlText += `&#${(161 + c).toString()};`;
-            else if (c >= 10 && c <= 19) htmlText += `&#${(173 + c - 10).toString()};`;
-            else if (c == 20) htmlText += '&#8729;';
-            else if (c >= 21 && c <= 32) htmlText += `&#${(184 + c - 21).toString()};`;
-            else if (c == 127) htmlText += '&#196;';
-            else htmlText += String.fromCharCode(c);
+            const encoding = fontlist[this.font.name as keyof typeof fontlist];
+            const codes = glyphs[encoding as keyof typeof glyphs];
+            const codepoint = codes[c.toString() as keyof typeof codes];
+            htmlText += `&#${codepoint.toString()};`;
         }
 
         // tfm is based on 1/2^16 pt units, rather than dviunit which is 10^−7 meters
