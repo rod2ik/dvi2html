@@ -1,17 +1,19 @@
-const path = require('path');
-const fs = require('fs');
-const execSync = require('child_process').execSync;
+#!/usr/bin/env node
 
-const outputPath = path.join(__dirname, '../src/tfm/fonts.json');
+import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
+
+const outputPath = path.join(import.meta.dirname, '../src/tfm/fonts.json');
 
 const fonts = {};
 
-function processTfmFile(fontname, filename) {
+const processTfmFile = (fontname, filename) => {
     console.log(fontname, filename);
 
     const buffer = fs.readFileSync(filename);
     fonts[fontname] = buffer.toString('base64');
-}
+};
 
 const desiredFonts = [
     'cmb10',

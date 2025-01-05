@@ -30,14 +30,14 @@ function word_ptr(base: number, index: number) {
 class TFMParser {
     position: number;
     stream: Buffer;
-    length: number;
-    table_lengths: number[];
-    table_pointers: number[];
-    entire_file_length: number;
-    smallest_character_code: number;
-    largest_character_code: number;
-    number_of_chars: number;
-    tfm: Tfm.Tfm;
+    length = 0;
+    table_lengths: number[] = [];
+    table_pointers: number[] = [];
+    entire_file_length = 0;
+    smallest_character_code = 0;
+    largest_character_code = 0;
+    number_of_chars = 0;
+    tfm!: Tfm.Tfm;
 
     constructor(buffer: Buffer) {
         this.position = 0;
@@ -185,7 +185,7 @@ class TFMParser {
         this.table_lengths[tables.character_info] = this.number_of_chars;
 
         // read the last lengths
-        for (let i = tables.width; i <= tables.font_parameter; i++) {
+        for (let i = tables.width; i <= tables.font_parameter; ++i) {
             this.table_lengths[i] = this.read_unsigned_byte2();
         }
 
@@ -195,7 +195,7 @@ class TFMParser {
         // The header starts at 24 bytes
         this.table_pointers[tables.header] = 24;
 
-        for (let table = tables.header; table < tables.font_parameter; table++) {
+        for (let table = tables.header; table < tables.font_parameter; ++table) {
             this.table_pointers[table + 1] = this.position_in_table(table, this.table_lengths[table]);
         }
 
@@ -273,13 +273,13 @@ class TFMParser {
         const character_info_table_position = this.table_pointers[tables.character_info];
         let position = this.position;
 
-        let character_coding_scheme: string;
-        if (position < character_info_table_position) character_coding_scheme = this.read_bcpl();
+        const character_coding_scheme: string | undefined =
+            position < character_info_table_position ? this.read_bcpl() : undefined;
 
         // Read header[12 ... 16] if there
         position += 40; // character codeing scheme length: bytes (11 - 2 + 1) * 4 = 10 * 4
-        let family: string;
-        if (position < character_info_table_position) family = this.read_bcpl(position);
+        const family: string | undefined =
+            position < character_info_table_position ? this.read_bcpl(position) : undefined;
 
         // Read header[12 ... 16] if there
         position += 20; // family length: bytes (16 - 12 +1) * 4 = 5 * 4
@@ -416,7 +416,7 @@ class TFMParser {
 
         // Read the instructions
         let first_instruction = true;
-        for (let i = 0; i < this.table_lengths[tables.lig_kern]; i++) {
+        for (let i = 0; i < this.table_lengths[tables.lig_kern]; ++i) {
             this.seek_to_table(tables.lig_kern, i);
             let skip_byte = this.read_unsigned_byte1();
             next_char = this.read_unsigned_byte1();
@@ -459,7 +459,7 @@ class TFMParser {
                 );
             }
 
-            first_instruction = stop == true;
+            first_instruction = stop;
         }
     }
 
@@ -502,7 +502,7 @@ class TFMParser {
 
     // Read the character information table
     read_characters() {
-        for (let c = this.smallest_character_code; c < this.largest_character_code; c++) {
+        for (let c = this.smallest_character_code; c < this.largest_character_code; ++c) {
             this.process_char(c);
         }
     }
@@ -532,14 +532,12 @@ class TFMParser {
         if (italic_index != 0) italic_correction = this.read_fix_word_in_table(tables.italic_correction, italic_index);
 
         // Interpret the tag field
-        let lig_kern_program_index: number;
-        let next_larger_char: number;
-        let extensible_recipe: number[];
-        if (tag == LIG_TAG) lig_kern_program_index = remainder;
+        const lig_kern_program_index: number | null = tag == LIG_TAG ? remainder : null;
 
-        if (tag == LIST_TAG) next_larger_char = remainder;
+        const next_larger_char: number | null = tag == LIST_TAG ? remainder : null;
 
-        if (tag == EXT_TAG) extensible_recipe = this.read_extensible_recipe(remainder);
+        const extensible_recipe: number[] | undefined =
+            tag == EXT_TAG ? this.read_extensible_recipe(remainder) : undefined;
 
         if (extensible_recipe !== undefined) {
             // Fixme: self registration ?
@@ -596,10 +594,7 @@ function parse(buffer: Buffer) {
 }
 
 export function tfmData(fontname: string) {
-    if (fontdata[fontname]) {
-        return Buffer.from(fontdata[fontname], 'base64');
-    }
-
+    if (fontname in fontdata) return Buffer.from(fontdata[fontname as keyof typeof fontdata], 'base64');
     throw new Error(`Could not find font ${fontname}`);
 }
 

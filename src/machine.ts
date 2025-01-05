@@ -1,4 +1,5 @@
-import { Tfm } from './tfm/tfm';
+import type { Buffer } from 'buffer';
+import type { Tfm } from './tfm/tfm';
 import { loadFont } from './tfm/index';
 import Matrix from './matrix';
 
@@ -29,14 +30,21 @@ class Position {
     }
 }
 
+interface DviFontProperties {
+    name: string;
+    checksum: number;
+    scaleFactor: number;
+    designSize: number;
+}
+
 export class DviFont {
     name: string;
     checksum: number;
     scaleFactor: number;
     designSize: number;
-    metrics: Tfm;
+    metrics!: Tfm;
 
-    constructor(properties: DviFont) {
+    constructor(properties: DviFontProperties) {
         this.name = properties.name;
         this.checksum = properties.checksum;
         this.scaleFactor = properties.scaleFactor;
@@ -46,9 +54,9 @@ export class DviFont {
 
 export class Machine {
     fonts: DviFont[];
-    font: DviFont;
-    stack: Position[];
-    position: Position;
+    font!: DviFont;
+    stack: Position[] = [];
+    position: Position = new Position();
     matrix: Matrix;
 
     constructor() {
@@ -56,32 +64,48 @@ export class Machine {
         this.matrix = new Matrix();
     }
 
-    preamble(_numerator: number, _denominator: number, _magnification: number, _comment: string) {}
+    preamble(_numerator: number, _denominator: number, _magnification: number, _comment: string) {
+        /* ignore */
+    }
 
-    pushColor(_c: string) {}
+    pushColor(_c: string) {
+        /* ignore */
+    }
 
-    popColor() {}
+    popColor() {
+        /* ignore */
+    }
 
-    setPapersize(_width: number, _height: number) {}
+    setPapersize(_width: number, _height: number) {
+        /* ignore */
+    }
 
     push() {
         this.stack.push(new Position(this.position));
     }
 
     pop() {
-        this.position = this.stack.pop();
+        const last = this.stack.pop();
+        if (!last) throw new Error('Attempted to pop from empty position stack');
+        this.position = last;
     }
 
-    beginPage(_page: any) {
+    beginPage(_page: unknown) {
         this.stack = [];
         this.position = new Position();
     }
 
-    endPage() {}
+    endPage() {
+        /* ignore */
+    }
 
-    post(_p: any) {}
+    post(_p: unknown) {
+        /* ignore */
+    }
 
-    postPost(_p: any) {}
+    postPost(_p: unknown) {
+        /* ignore */
+    }
 
     getCurrentPosition(): [number, number] {
         return [this.position.h, this.position.v];
@@ -92,7 +116,9 @@ export class Machine {
         this.position.v = y;
     }
 
-    putRule(_rule: Rule) {}
+    putRule(_rule: Rule) {
+        /* ignore */
+    }
 
     moveRight(distance: number) {
         this.position.h += distance;
@@ -106,16 +132,20 @@ export class Machine {
         this.font = font;
     }
 
-    putSVG(_svg: string) {}
+    putSVG(_svg: string) {
+        /* ignore */
+    }
 
-    putHTML(_html: string) {}
+    putHTML(_html: string) {
+        /* ignore */
+    }
 
     // Returns the width of the text
     putText(_text: Buffer): number {
         return 0;
     }
 
-    loadFont(properties: any): DviFont {
+    loadFont(properties: DviFontProperties): DviFont {
         const f = new DviFont(properties);
         f.metrics = loadFont(properties.name);
         return f;

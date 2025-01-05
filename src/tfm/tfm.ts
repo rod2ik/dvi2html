@@ -5,8 +5,8 @@ export class TfmChar {
     height: number;
     depth: number;
     italic_correction: number;
-    lig_kern_program_index: number;
-    next_larger_char: number;
+    lig_kern_program_index: number | null;
+    next_larger_char: number | null;
 
     constructor(
         tfm: Tfm,
@@ -15,8 +15,8 @@ export class TfmChar {
         height: number,
         depth: number,
         italic_correction: number,
-        lig_kern_program_index: number,
-        next_larger_char: number
+        lig_kern_program_index: number | null,
+        next_larger_char: number | null
     ) {
         this.tfm = tfm;
         tfm.set_char(char_code, this);
@@ -64,9 +64,9 @@ export class TfmChar {
 
 // This class encapsulates a TeX Font Metric for an extensible Glyph.
 export class TfmExtensibleChar extends TfmChar {
-    top: number;
-    mid: number;
-    bot: number;
+    top = 0;
+    mid = 0;
+    bot = 0;
     rep: number[];
 
     constructor(
@@ -77,8 +77,8 @@ export class TfmExtensibleChar extends TfmChar {
         depth: number,
         italic_correction: number,
         extensible_recipe: number[],
-        lig_kern_program_index: number,
-        next_larger_char: number
+        lig_kern_program_index: number | null,
+        next_larger_char: number | null
     ) {
         super(tfm, char_code, width, height, depth, italic_correction, lig_kern_program_index, next_larger_char);
         this.rep = extensible_recipe;
@@ -137,48 +137,48 @@ export class TfmLigature extends TfmLigKern {
 
 // This class encapsulates a TeX Font Metric for a font.
 export class Tfm {
-    smallest_character_code: number;
+    smallest_character_code = 0;
     largest_character_code: number;
     checksum: number;
     designSize: number;
-    character_coding_scheme: string;
-    family: string;
+    character_coding_scheme: string | undefined;
+    family: string | undefined;
 
-    slant: number;
-    spacing: number;
-    space_stretch: number;
-    space_shrink: number;
-    x_height: number;
-    quad: number;
-    extra_space: number;
-    num1: number;
-    num2: number;
-    num3: number;
-    denom1: number;
-    denom2: number;
-    sup1: number;
-    sup2: number;
-    sup3: number;
-    sub1: number;
-    sub2: number;
-    supdrop: number;
-    subdrop: number;
-    delim1: number;
-    delim2: number;
-    axis_height: number;
-    default_rule_thickness: number;
-    big_op_spacing: number[];
+    slant = 0;
+    spacing = 0;
+    space_stretch = 0;
+    space_shrink = 0;
+    x_height = 0;
+    quad = 0;
+    extra_space = 0;
+    num1 = 0;
+    num2 = 0;
+    num3 = 0;
+    denom1 = 0;
+    denom2 = 0;
+    sup1 = 0;
+    sup2 = 0;
+    sup3 = 0;
+    sub1 = 0;
+    sub2 = 0;
+    supdrop = 0;
+    subdrop = 0;
+    delim1 = 0;
+    delim2 = 0;
+    axis_height = 0;
+    default_rule_thickness = 0;
+    big_op_spacing: number[] = [];
 
-    _lig_kerns: TfmLigKern[];
-    characters: any;
+    _lig_kerns: TfmLigKern[] = [];
+    characters = new Map<number, TfmChar>();
 
     constructor(
         smallest_character_code: number,
         largest_character_code: number,
         checksum: number,
         designSize: number,
-        character_coding_scheme: string,
-        family: string
+        character_coding_scheme: string | undefined,
+        family: string | undefined
     ) {
         this.smallest_character_code = smallest_character_code;
         this.largest_character_code = largest_character_code;
@@ -186,17 +186,14 @@ export class Tfm {
         this.designSize = designSize;
         this.character_coding_scheme = character_coding_scheme;
         this.family = family;
-
-        this._lig_kerns = [];
-        this.characters = {};
     }
 
     get_char(x: number) {
-        return this.characters[x];
+        return this.characters.get(x);
     }
 
-    set_char(x: number, y: any) {
-        this.characters[x] = y;
+    set_char(x: number, y: TfmChar) {
+        this.characters.set(x, y);
     }
 
     // Set the font parameters.

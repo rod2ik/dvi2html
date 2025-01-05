@@ -1,5 +1,5 @@
 import { DviCommand, Special, merge } from '../parser';
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 import PSInterpreter from './psinterpreter';
 
 class PS extends DviCommand {

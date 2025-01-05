@@ -6,7 +6,7 @@ type valueArray = [number, number, number, number, number, number];
 export default class Matrix {
     private values: valueArray;
 
-    constructor(m?: Matrix | void) {
+    constructor(m?: Matrix) {
         this.values = m ? (m.values.slice(0) as valueArray) : [1, 0, 0, 1, 0, 0];
     }
 
@@ -22,7 +22,7 @@ export default class Matrix {
     }
 
     // this = this * A
-    multiplyRight(A: Matrix): Matrix {
+    multiplyRight(A: Matrix): this {
         const result = new Matrix();
         result.values[0] = this.values[0] * A.values[0] + this.values[2] * A.values[1];
         result.values[1] = this.values[1] * A.values[0] + this.values[3] * A.values[1];
@@ -35,7 +35,7 @@ export default class Matrix {
     }
 
     // this = this * [[x, 0, 0], [0, y, 0], [0, 0, 1]]
-    scale(x: number, y: number): Matrix {
+    scale(x: number, y: number): this {
         this.values[0] *= x;
         this.values[1] *= x;
         this.values[2] *= y;
@@ -44,7 +44,7 @@ export default class Matrix {
     }
 
     // this = this * [[1, 0, x], [0, 1, y], [0, 0, 1]]
-    translate(x: number, y: number): Matrix {
+    translate(x: number, y: number): this {
         this.values[4] = this.values[0] * x + this.values[2] * y + this.values[4];
         this.values[5] = this.values[1] * x + this.values[3] * y + this.values[5];
         return this;
@@ -52,7 +52,7 @@ export default class Matrix {
 
     // this = this * [[cos(x), sin(x), 0], [-sin(x), cos(x), 0], [0, 0, 1]]
     // x is in degrees
-    rotate(x: number): Matrix {
+    rotate(x: number): this {
         const rad = (x * Math.PI) / 180;
         const c = Math.cos(rad);
         const s = Math.sin(rad);

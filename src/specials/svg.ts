@@ -1,5 +1,5 @@
 import { DviCommand, Special, merge } from '../parser';
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 
 class SVG extends DviCommand {
     svg: string;

@@ -1,10 +1,10 @@
 import { DviCommand, Special } from '../parser';
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 import Matrix from '../matrix';
 
 class PSFile extends DviCommand {
     ps: string;
-    filename: string;
+    filename = '';
 
     constructor(ps: string) {
         super({});
@@ -12,7 +12,7 @@ class PSFile extends DviCommand {
     }
 
     execute(machine: Machine) {
-        const filename = getAttribute(this.ps, 'psfile', '')?.replace(/\.eps$/, '');
+        const filename = getAttribute(this.ps, 'psfile', '').replace(/\.eps$/, '');
         if (!filename) return;
 
         // Bounding box of image in PS point units (lower left and upper right corner)
@@ -57,7 +57,8 @@ class PSFile extends DviCommand {
         matrix.translate(-llx, -ury);
 
         machine.putSVG(
-            `<image x="${llx}" y="${lly}" width="${urx}" height="${ury}" href="${filename}"` +
+            `<image x="${llx.toString()}" y="${lly.toString()}" ` +
+                `width="${urx.toString()}" height="${ury.toString()}" href="${filename}"` +
                 `${matrix.toSVGTransform()}></image>`
         );
     }
@@ -68,7 +69,7 @@ class PSFile extends DviCommand {
 }
 
 function getAttribute(input: string, attr: string, defaultValue: string): string {
-    const strVal = input.match(RegExp(`${attr}="?(.*?)"?( |$)`, 'i'));
+    const strVal = RegExp(`${attr}="?(.*?)"?( |$)`, 'i').exec(input);
     if (strVal && strVal.length > 1) return strVal[1];
     return defaultValue;
 }

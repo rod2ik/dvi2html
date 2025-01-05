@@ -1,4 +1,4 @@
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 import Matrix from '../matrix';
 
 // Postscript interpreter.
@@ -7,7 +7,7 @@ import Matrix from '../matrix';
 // \rotatebox, and \resizebox, and a little more that is incomplete and mostly untested.
 export default class PSInterpreter {
     private machine: Machine;
-    private stack: StackObject[];
+    private stack: StackObjectType[];
     private psInput: string;
     private static stateQueue: Matrix[] = [];
 
@@ -25,7 +25,7 @@ export default class PSInterpreter {
                 continue;
             }
             // String literals
-            if (token[0] == '(') {
+            if (token.startsWith('(')) {
                 this.stack.push(new PSString(token));
                 continue;
             }
@@ -38,17 +38,17 @@ export default class PSInterpreter {
             if (token == ']') {
                 const array = new PSArray();
                 const elt = this.stack.pop();
-                while (!elt?.name || elt.name != 'mark') {
+                while (elt && (!elt.name || elt.name != 'mark')) {
                     array.push(elt);
                 }
                 this.stack.push(array);
             }
             // Identifiers (i.e. Variables)
-            if (token[0] == '/') {
+            if (token.startsWith('/')) {
                 this.stack.push(new PSIdentifier(token));
             }
             // Procedures
-            if (token[0] == '{') {
+            if (token.startsWith('{')) {
                 this.stack.push(new PSProcedure(token));
             }
             // Operators
@@ -61,7 +61,7 @@ export default class PSInterpreter {
     }
 
     // The value of each key is the number of parameters from the stack it needs.
-    private static operators = {
+    private static operators: Record<string, (interpreter: PSInterpreter) => void> = {
         // Stack operators
         pop: (interpreter: PSInterpreter) => {
             interpreter.stack.pop();
@@ -70,8 +70,8 @@ export default class PSInterpreter {
         exch: (interpreter: PSInterpreter) => {
             const a1 = interpreter.stack.pop();
             const a2 = interpreter.stack.pop();
-            interpreter.stack.push(a1);
-            interpreter.stack.push(a2);
+            if (a1) interpreter.stack.push(a1);
+            if (a2) interpreter.stack.push(a2);
         },
 
         dup: (interpreter: PSInterpreter) => {
@@ -85,30 +85,39 @@ export default class PSInterpreter {
         // Math operators
         neg: (interpreter: PSInterpreter) => {
             const x = interpreter.stack.pop();
+            if (!(x instanceof PSNumber)) throw new Error('Attempted to negate a stack object that is not numeric.');
             interpreter.stack.push(new PSNumber(-x.value));
         },
 
         add: (interpreter: PSInterpreter) => {
             const x = interpreter.stack.pop();
             const y = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to add stack objects that are not both numeric.');
             interpreter.stack.push(new PSNumber(x.value + y.value));
         },
 
         sub: (interpreter: PSInterpreter) => {
             const x = interpreter.stack.pop();
             const y = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to subtract stack objects that are not both numeric.');
             interpreter.stack.push(new PSNumber(y.value - x.value));
         },
 
         mul: (interpreter: PSInterpreter) => {
             const x = interpreter.stack.pop();
             const y = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to multiply stack objects that are not both numeric.');
             interpreter.stack.push(new PSNumber(x.value * y.value));
         },
 
         div: (interpreter: PSInterpreter) => {
             const x = interpreter.stack.pop();
             const y = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to divide stack objects that are not both numeric.');
             interpreter.stack.push(new PSNumber(y.value / x.value));
         },
 
@@ -118,7 +127,9 @@ export default class PSInterpreter {
         },
 
         grestore: (interpreter: PSInterpreter) => {
-            interpreter.machine.matrix = PSInterpreter.stateQueue.pop();
+            const last = PSInterpreter.stateQueue.pop();
+            if (!last) throw new Error('Attempted to restore graphics state with empty stack.');
+            interpreter.machine.matrix = last;
         },
 
         // Path construction operators
@@ -129,6 +140,8 @@ export default class PSInterpreter {
         moveto: (interpreter: PSInterpreter) => {
             const y = interpreter.stack.pop();
             const x = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to set position from stack objects that are not both numeric.');
             interpreter.machine.setCurrentPosition(x.value, y.value);
         },
 
@@ -136,18 +149,24 @@ export default class PSInterpreter {
         scale: (interpreter: PSInterpreter) => {
             const y = interpreter.stack.pop();
             const x = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to set scale from stack objects that are not both numeric.');
             interpreter.machine.matrix.scale(x.value, y.value);
         },
 
         translate: (interpreter: PSInterpreter) => {
             const y = interpreter.stack.pop();
             const x = interpreter.stack.pop();
+            if (!(x instanceof PSNumber && y instanceof PSNumber))
+                throw new Error('Attempted to set translation from stack objects that are not both numeric.');
             interpreter.machine.matrix.translate(x.value, y.value);
         },
 
         rotate: (interpreter: PSInterpreter) => {
             // r is in degrees
             const r = interpreter.stack.pop();
+            if (!(r instanceof PSNumber))
+                throw new Error('Attempted to set rotation with a stack object that is not numeric.');
             interpreter.machine.matrix.rotate(r.value);
         }
     };
@@ -169,7 +188,7 @@ function* tokens(input: string) {
             case '\t':
             case '\n':
                 if (procedureLevel) {
-                    if (token[token.length - 1] != ' ') token += ' ';
+                    if (!token.endsWith(' ')) token += ' ';
                 } else if (stringLevel) {
                     switch (character) {
                         case ' ':
@@ -232,7 +251,7 @@ function* tokens(input: string) {
                 token += character;
                 nextChar = charGen.next();
                 if (nextChar.done) throw Error('Invalid escape character.');
-                if (!nextChar.done) token += nextChar.value;
+                token += nextChar.value;
                 continue;
             case '/': // Name start
                 if (!procedureLevel && !stringLevel && token) yield token;
@@ -251,16 +270,19 @@ function* tokens(input: string) {
 }
 
 // Postscript stack objects
-abstract class StackObject {
-    name: string;
-    value: any;
-    constructor(name: string) {
+abstract class StackObject<T> {
+    name?: string;
+    value!: T;
+
+    constructor(name?: string) {
         this.name = name;
     }
 }
 
+type StackObjectType = PSNumber | PSString | PSArray | PSMark | PSIdentifier | PSProcedure;
+
 // Stack number
-class PSNumber extends StackObject {
+class PSNumber extends StackObject<number> {
     constructor(value: number | string) {
         super('number');
         if (typeof value === 'number') this.value = value;
@@ -269,7 +291,7 @@ class PSNumber extends StackObject {
 }
 
 // Stack string
-class PSString extends StackObject {
+class PSString extends StackObject<string> {
     constructor(value: string) {
         super('string');
         this.value = value.replace(/^\(|\)$/g, '');
@@ -277,23 +299,25 @@ class PSString extends StackObject {
 }
 
 // Stack array
-class PSArray extends StackObject {
-    constructor(value?: StackObject[]) {
+class PSArray extends StackObject<StackObjectType[]> {
+    constructor(value?: StackObjectType[]) {
         super('array');
-        this.value = value || [];
+        this.value = value ?? [];
     }
 
-    push(elt: StackObject) {
+    push(elt: StackObjectType) {
         this.value.push(elt);
     }
 
-    pop(): StackObject {
-        return this.value.pop();
+    pop(): StackObjectType {
+        const last = this.value.pop();
+        if (!last) throw new Error('Attempted to pop object from empty stack.');
+        return last;
     }
 }
 
 // Stack mark
-class PSMark extends StackObject {
+class PSMark extends StackObject<string> {
     constructor() {
         super('mark');
         this.value = '-mark-';
@@ -301,7 +325,7 @@ class PSMark extends StackObject {
 }
 
 // Stack identifier
-class PSIdentifier extends StackObject {
+class PSIdentifier extends StackObject<string> {
     constructor(value: string) {
         super('identifier');
         this.value = value.replace(/^\//, '');
@@ -309,7 +333,7 @@ class PSIdentifier extends StackObject {
 }
 
 // Stack procedure object
-class PSProcedure extends StackObject {
+class PSProcedure extends StackObject<string> {
     constructor(value: string) {
         super('procedure');
         this.value = value;

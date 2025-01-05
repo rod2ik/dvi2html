@@ -1,17 +1,26 @@
 {
     "name": "dvi2html",
-    "version": "0.0.6",
+    "version": "0.0.7-beta1",
     "description": "Convert DVI to HTML5/CSS",
-    "main": "lib/index.js",
-    "types": "lib/index.d.ts",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        "import": "./dist/index.js"
+    },
     "scripts": {
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "prepare": "npm run build",
-        "build": "node tools/tfm2json.js && tsc"
+        "lint": "eslint . --fix",
+        "lint:check": "eslint .",
+        "build:fonts": "node tools/tfm2json.js",
+        "build:lib:dev": "webpack",
+        "build:lib": "webpack --mode production",
+        "build": "npm run build:fonts && npm run build:lib"
     },
     "files": [
-        "lib/**/*"
+        "dist/**/*"
     ],
     "author": "Jim Fowler",
     "license": "GPL-3.0",
@@ -19,8 +28,16 @@
         "buffer": "^6.0.3"
     },
     "devDependencies": {
+        "@stylistic/eslint-plugin": "^2.12.1",
         "@types/node": "^22.10.5",
+        "eslint": "^9.17.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-webpack-plugin": "^4.2.0",
         "prettier": "^3.4.2",
-        "typescript": "^5.7.2"
+        "ts-loader": "^9.5.1",
+        "typescript": "^5.7.2",
+        "typescript-eslint": "^8.19.0",
+        "webpack": "^5.97.1",
+        "webpack-cli": "^6.0.1"
     }
 }

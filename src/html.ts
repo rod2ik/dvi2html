@@ -1,16 +1,17 @@
-import { Machine, Rule } from './machine';
-import { Writable } from 'stream';
+import type { Buffer } from 'buffer';
+import { Machine, type Rule } from './machine';
+import type { Writable } from 'stream';
 
 export default class HTMLMachine extends Machine {
     output: Writable;
-    pointsPerDviUnit: number;
+    pointsPerDviUnit = 0;
 
     svgDepth: number;
     color: string;
     colorStack: string[];
 
-    paperwidth: number;
-    paperheight: number;
+    paperwidth = 0;
+    paperheight = 0;
 
     pushColor(c: string) {
         this.colorStack.push(this.color);
@@ -45,28 +46,28 @@ export default class HTMLMachine extends Machine {
         const left = this.position.h * this.pointsPerDviUnit;
         const top = this.position.v * this.pointsPerDviUnit;
 
-        this.svgDepth += (svg.match(/<svg.*>/g) || []).length;
-        this.svgDepth -= (svg.match(/<\/svg.*>/g) || []).length;
+        this.svgDepth += (svg.match(/<svg.*>/g) ?? []).length;
+        this.svgDepth -= (svg.match(/<\/svg.*>/g) ?? []).length;
 
-        if (svg.match(/<svg beginpicture>/)) {
+        if (svg.includes('<svg beginpicture>')) {
             if (this.svgDepth > 1) {
                 // In this case we are inside another svg element so drop the svg start tags.
                 svg = svg.replace('<svg beginpicture>', '');
             } else {
                 svg = svg.replace(
                     '<svg beginpicture>',
-                    `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ` +
-                        `xmlns:xlink="http://www.w3.org/1999/xlink" ` +
-                        `width="${this.paperwidth}pt" height="${this.paperheight}pt" ` +
-                        `viewBox="-72 -72 ${this.paperwidth} ${this.paperheight}">`
+                    '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" ' +
+                        'xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+                        `width="${this.paperwidth.toString()}pt" height="${this.paperheight.toString()}pt" ` +
+                        `viewBox="-72 -72 ${this.paperwidth.toString()} ${this.paperheight.toString()}">`
                 );
             }
         }
 
-        if (svg.match(/<\/svg endpicture>/)) {
+        if (/<\/svg endpicture>/.exec(svg)) {
             // If we are inside another svg element, then drop the svg end tag.
             // Otherwise just remove the " endpicture" bit.
-            svg = svg.replace('<\/svg endpicture>', this.svgDepth > 0 ? '' : '<\/svg>');
+            svg = svg.replace('</svg endpicture>', this.svgDepth > 0 ? '' : '</svg>');
         }
 
         svg = svg.replace(/{\?x}/g, left.toString());
@@ -95,8 +96,8 @@ export default class HTMLMachine extends Machine {
         const top = bottom - a;
 
         this.output.write(
-            `<rect x="${left}" y="${top}" width="${b}" height="${a}" fill="${this.color}"` +
-                `${this.matrix.toSVGTransform()}></rect>`
+            `<rect x="${left.toString()}" y="${top.toString()}" width="${b.toString()}" ` +
+                `height="${a.toString()}" fill="${this.color.toString()}"${this.matrix.toSVGTransform()}></rect>`
         );
     }
 
@@ -107,33 +108,24 @@ export default class HTMLMachine extends Machine {
 
         let htmlText = '';
 
-        for (let i = 0; i < text.length; i++) {
-            const c = text[i];
-            let metrics = this.font.metrics.characters[c];
+        for (const c of text) {
+            let metrics = this.font.metrics.characters.get(c);
             if (metrics === undefined) {
                 //TODO: Handle this better. Error only happens for c === 127
-                console.error(`Could not find font metric for ${c}`);
-                metrics = this.font.metrics.characters[126];
+                console.error(`Could not find font metric for ${c.toString()}`);
+                metrics = this.font.metrics.characters.get(126);
             }
 
-            textWidth += metrics.width;
-            textHeight = Math.max(textHeight, metrics.height);
-            textDepth = Math.max(textDepth, metrics.depth);
+            textWidth += metrics?.width ?? 0;
+            textHeight = Math.max(textHeight, metrics?.height ?? 0);
+            textDepth = Math.max(textDepth, metrics?.depth ?? 0);
 
-            // This is ridiculous.
-            if (c >= 0 && c <= 9) {
-                htmlText += `&#${161 + c};`;
-            } else if (c >= 10 && c <= 19) {
-                htmlText += `&#${173 + c - 10};`;
-            } else if (c == 20) {
-                htmlText += `&#${8729};`; // O RLLY?!
-            } else if (c >= 21 && c <= 32) {
-                htmlText += `&#${184 + c - 21};`;
-            } else if (c == 127) {
-                htmlText += `&#${196};`;
-            } else {
-                htmlText += String.fromCharCode(c);
-            }
+            if (c >= 0 && c <= 9) htmlText += `&#${(161 + c).toString()};`;
+            else if (c >= 10 && c <= 19) htmlText += `&#${(173 + c - 10).toString()};`;
+            else if (c == 20) htmlText += '&#8729;';
+            else if (c >= 21 && c <= 32) htmlText += `&#${(184 + c - 21).toString()};`;
+            else if (c == 127) htmlText += '&#196;';
+            else htmlText += String.fromCharCode(c);
         }
 
         // tfm is based on 1/2^16 pt units, rather than dviunit which is 10^−7 meters
@@ -147,24 +139,20 @@ export default class HTMLMachine extends Machine {
 
         if (this.svgDepth == 0) {
             this.output.write(
-                `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; font-size: ${
-                    fontsize
-                }pt; position: absolute; top: ${top - height}pt; left: ${
-                    left
-                }pt; overflow: visible;"><span style="margin-top: -${fontsize}pt; line-height: ${0}pt; height: ${
-                    fontsize
-                }pt; display: inline-block; vertical-align: baseline; ">${
-                    htmlText
-                }</span><span style="display: inline-block; vertical-align: ${
-                    height
-                }pt; height: ${0}pt; line-height: 0;"></span></span>`
+                `<span style="line-height: 0; color: ${this.color}; font-family: ${this.font.name}; ` +
+                    `font-size: ${fontsize.toString()}pt; position: absolute; top: ${(top - height).toString()}pt; ` +
+                    `left: ${left.toString()}pt; overflow: visible;">` +
+                    `<span style="margin-top: -${fontsize.toString()}pt; line-height: 0pt; height: ` +
+                    `${fontsize.toString()}pt; display: inline-block; vertical-align: baseline; ">${htmlText}</span>` +
+                    `<span style="display: inline-block; vertical-align: ${height.toString()}pt; ` +
+                    'height: 0pt; line-height: 0;"></span></span>'
             );
         } else {
             const bottom = this.position.v * this.pointsPerDviUnit;
             // No 'pt' on fontsize since those units are potentially scaled
             this.output.write(
-                `<text alignment-baseline="baseline" y="${bottom}" x="${left}" ` +
-                    `font-family="${this.font.name}" font-size="${fontsize}" ` +
+                `<text alignment-baseline="baseline" y="${bottom.toString()}" x="${left.toString()}" ` +
+                    `font-family="${this.font.name}" font-size="${fontsize.toString()}" ` +
                     `fill="${this.color}"${this.matrix.toSVGTransform()}>` +
                     `${htmlText}</text>`
             );

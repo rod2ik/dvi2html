@@ -1,5 +1,5 @@
 import { DviCommand, Special } from '../parser';
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 
 class Papersize extends DviCommand {
     width: number;
@@ -16,7 +16,7 @@ class Papersize extends DviCommand {
     }
 
     toString(): string {
-        return `Papersize { width: ${this.width}, height: ${this.height} }`;
+        return `Papersize { width: ${this.width.toString()}, height: ${this.height.toString()} }`;
     }
 }
 

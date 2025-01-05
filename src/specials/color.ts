@@ -1,5 +1,5 @@
 import { DviCommand, Special } from '../parser';
-import { Machine } from '../machine';
+import type { Machine } from '../machine';
 
 class PushColor extends DviCommand {
     color: string;
@@ -28,7 +28,7 @@ class PopColor extends DviCommand {
     }
 
     toString(): string {
-        return `PopColor { }`;
+        return 'PopColor { }';
     }
 }
 

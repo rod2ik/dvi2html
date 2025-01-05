@@ -1,6 +1,8 @@
-const fs = require('fs');
-const dvi2html = require('./lib').dvi2html;
-const Writable = require('stream').Writable;
+#!/usr/bin/env node
+
+import fs from 'fs';
+import { Writable } from 'stream';
+import { dvi2html } from './dist/index.js';
 
 const filename = process.argv[2];
 const stream = fs.createReadStream(filename, { highWaterMark: 256 });
@@ -19,27 +21,25 @@ const myWritable = new Writable({
         filename.replace(/\.dvi$/, '.html'),
         `<!DOCTYPE html>
 <html lang="en-US">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>DVI2HTML Testing ${filename.replace(/\.dvi$/, '')}</title>
-<link rel="stylesheet" type="text/css" href="dist/fonts.css">
-<style>
-.svg-container {
-	margin: 10px auto;
-	width: -moz-fit-content;
-	width: fit-content;
-	height: -moz-fit-content;
-	height: fit-content;
-}
-.svg-container svg { overflow: visible; }
-</style>
-</head>
-<body>
-<div class="svg-container">
-	${svg}
-</div>
-</body>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DVI2HTML Testing ${filename.replace(/\.dvi$/, '')}</title>
+        <link rel="stylesheet" href="fonts.css">
+        <style>
+            .svg-container {
+                margin: 10px auto;
+                width: -moz-fit-content;
+                width: fit-content;
+                height: -moz-fit-content;
+                height: fit-content;
+            }
+            .svg-container svg { overflow: visible; }
+        </style>
+    </head>
+    <body>
+        <div class="svg-container">${svg}</div>
+    </body>
 </html>
 `
     );

@@ -1,5 +1,7 @@
-import { Machine, Rule } from './machine';
-import { Writable } from 'stream';
+import type { Buffer } from 'buffer';
+import type { Rule } from './machine';
+import { Machine } from './machine';
+import type { Writable } from 'stream';
 
 const epsilon = 0.00001;
 
@@ -13,9 +15,11 @@ export default class TextMachine extends Machine {
         this.snippets = [];
     }
 
-    putRule(_rule: Rule) {}
+    putRule(_rule: Rule) {
+        /* ignore */
+    }
 
-    beginPage(page: any) {
+    beginPage(page: unknown) {
         super.beginPage(page);
         this.snippets = [];
     }
@@ -56,7 +60,7 @@ export default class TextMachine extends Machine {
         return epsilon;
     }
 
-    postPost(_p: any) {
+    postPost(_p: unknown) {
         this.output.end();
     }
 }

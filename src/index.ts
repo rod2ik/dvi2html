@@ -1,3 +1,4 @@
+import type { Buffer } from 'buffer';
 import type { Writable } from 'stream';
 import color from './specials/color';
 import svg from './specials/svg';

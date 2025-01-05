@@ -1,0 +1,13 @@
+/src
+/node_modules
+/.github
+/tools
+webpack.config.js
+dvi2html.js
+fonts.css
+.vim
+.editorconfig
+.prettierrc
+eslint-config.mjs
+webpack.config.js
+tsconfig.json
