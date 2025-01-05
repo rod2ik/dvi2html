@@ -1,7 +1,16 @@
 {
-    "name": "dvi2html",
+    "name": "@drgrice1/dvi2html",
     "version": "0.0.7-beta1",
     "description": "Convert DVI to HTML5/CSS",
+    "author": "Jim Fowler",
+    "license": "GPL-3.0",
+    "contributors": [
+        "Glenn Rice"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/drgrice1/dvi2html.git"
+    },
     "main": "dist/index.js",
     "module": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -22,8 +31,6 @@
     "files": [
         "dist/**/*"
     ],
-    "author": "Jim Fowler",
-    "license": "GPL-3.0",
     "dependencies": {
         "buffer": "^6.0.3"
     },
