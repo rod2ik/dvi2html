@@ -3,7 +3,7 @@ import { Machine, type Rule } from './machine';
 import type { Writable } from 'stream';
 
 import * as glyphs from './tfm/encodings.json';
-import * as fontlist from '../tools/fontlist.json';
+import * as fontlist from './tfm/fontlist.json';
 
 export default class HTMLMachine extends Machine {
     output: Writable;

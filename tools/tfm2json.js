@@ -3,7 +3,7 @@
 import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
-import desiredFonts from './fontlist.json' with { type: 'json' };
+import desiredFonts from '../src/tfm/fontlist.json' with { type: 'json' };
 
 const outputPath = path.join(import.meta.dirname, '../src/tfm/fonts.json');
 

@@ -4,7 +4,7 @@ import { execFile } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import desiredFonts from './fontlist.json' with { type: 'json' };
+import desiredFonts from '../src/tfm/fontlist.json' with { type: 'json' };
 
 const kpsewhich = (s) =>
     new Promise((resolve, reject) => {
@@ -157,12 +157,16 @@ const loadEncoding = async (s, glyphs) => {
     const encodings = Object.values(desiredFonts).filter((value, index, self) => self.indexOf(value) === index);
     for (const encoding of encodings) {
         console.log(`Processing ${encoding}...`);
-        try {
+        if (encoding === 'cmex') {
+            tables.cmex = {};
+            for (let c = 0; c < 256; ++c) {
+                tables.cmex[c.toString()] =
+                    c >= 0 && c <= 9 ? c + 61601 : c >= 10 && c <= 32 ? c + 61603 : c == 127 ? 61636 : c + 61440;
+            }
+        } else {
             const table = await loadEncoding(encoding + '.enc', glyphs);
             if (table.length != 256) throw `Expected 256 codepoints but received ${table.length}`;
             tables[encoding] = table;
-        } catch (e) {
-            console.log(e);
         }
     }
 
