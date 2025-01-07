@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
-import { execFile } from 'child_process';
-import { promises as fs } from 'fs';
+import fs from 'fs';
 import path from 'path';
+import { tmpdir } from 'os';
+import { execFile } from 'child_process';
+import https from 'follow-redirects/https.js';
+import decompress from 'decompress';
+import { Font } from 'fonteditor-core';
 
-import desiredFonts from '../src/tfm/fontlist.json' with { type: 'json' };
+const tmpDir = await fs.promises.mkdtemp(path.join(tmpdir(), 'tmp-'));
 
 const kpsewhich = (s) =>
     new Promise((resolve, reject) => {
@@ -14,38 +18,7 @@ const kpsewhich = (s) =>
         });
     });
 
-const loadGlyphList = async (s) => {
-    const filename = await kpsewhich(s);
-    const list = (await fs.readFile(filename)).toString();
-
-    const result = {};
-
-    for (const line of list.split('\n')) {
-        const parts = line.replace(/#.*/, '').split(';');
-        if (parts.length >= 2) {
-            result[parts[0]] = Math.min(
-                ...parts[1]
-                    .split(',')
-                    .filter((e) => e.length == 4)
-                    .map((e) => parseInt(e, 16))
-            );
-        }
-    }
-    return result;
-};
-
-const loadAllGlyphs = async () => {
-    const glyphs1 = await loadGlyphList('glyphlist.txt');
-    const glyphs2 = await loadGlyphList('texglyphlist.txt');
-    Object.assign(glyphs1, glyphs2);
-
-    glyphs1['suppress'] = 0;
-    glyphs1['mapsto'] = 0x21a6;
-    glyphs1['arrowhookleft'] = 0x21a9;
-    glyphs1['arrowhookright'] = 0x21aa;
-    glyphs1['tie'] = 0x2040;
-    return glyphs1;
-};
+const isWordChar = (ch) => typeof ch === 'string' && /^[._A-Za-z0-9-]$/.test(ch);
 
 function* tokenize(chars) {
     const iterator = chars[Symbol.iterator]();
@@ -79,22 +52,13 @@ const getNextItem = (iterator) => {
     return item.done ? END_OF_SEQUENCE : item.value;
 };
 
-const isWordChar = (ch) => typeof ch === 'string' && /^[.A-Za-z0-9]$/.test(ch);
-
-const glyphToCodepoint = (glyphs, name) => {
-    if (typeof glyphs[name] === 'number') return glyphs[name];
-    if (name === '.notdef') return 0;
-    if (/^u[0-9A-Fa-f]+$/.test(name)) return parseInt(name.slice(1), 16);
-    throw `${name} is not a glyphname`;
-};
-
-const execute = (token, stack, state, table, glyphs) => {
+const execute = (token, stack, state, list, lists) => {
     if (token == 'repeat') {
         const code = stack.pop();
         const count = stack.pop();
         for (let i = 0; i < count; i++) {
             for (const c of code) {
-                execute(c, stack, state, table, glyphs);
+                execute(c, stack, state, list, lists);
             }
         }
         return;
@@ -123,12 +87,20 @@ const execute = (token, stack, state, table, glyphs) => {
 
     if (token[0] == ']') {
         state.bracket = false;
+        while (stack.length) {
+            lists[stack.pop()] = [...list];
+        }
+        list.length = 0;
+        return;
+    }
+
+    if (!state.bracket) {
+        stack.push(token.replace(/^\//, ''));
         return;
     }
 
     if (token[0] == '/') {
-        if (state.bracket) table.push(glyphToCodepoint(glyphs, token.slice(1)));
-        stack.push(token);
+        list.push(token.slice(1));
         return;
     }
 
@@ -138,39 +110,57 @@ const execute = (token, stack, state, table, glyphs) => {
     }
 };
 
-const loadEncoding = async (s, glyphs) => {
+const loadGlyphNameLists = async (s) => {
     const filename = await kpsewhich(s);
-    const encoding = (await fs.readFile(filename)).toString();
+    const encoding = (await fs.promises.readFile(filename)).toString();
+    const lists = {};
     const stack = [];
     const state = {};
-    const table = [];
+    const list = [];
     for (const token of tokenize(encoding)) {
-        execute(token, stack, state, table, glyphs);
+        execute(token, stack, state, list, lists);
     }
-    return new Uint16Array(table);
+    return lists;
 };
 
-(async () => {
-    const glyphs = await loadAllGlyphs();
-    const tables = {};
+const glyphNameLists = await loadGlyphNameLists('dvips-all.enc');
 
-    const encodings = Object.values(desiredFonts).filter((value, index, self) => self.indexOf(value) === index);
-    for (const encoding of encodings) {
-        console.log(`Processing ${encoding}...`);
-        if (encoding === 'cmex') {
-            tables.cmex = {};
-            for (let c = 0; c < 256; ++c) {
-                tables.cmex[c.toString()] =
-                    c >= 0 && c <= 9 ? c + 61601 : c >= 10 && c <= 32 ? c + 61603 : c == 127 ? 61636 : c + 61440;
+const zipFile = path.join(tmpDir, 'bakoma.zip');
+const file = fs.createWriteStream(zipFile);
+https.get('https://us.mirrors.cicku.me/ctan/fonts/cm/ps-type1/bakoma.zip', (response) => {
+    response.pipe(file);
+    file.on('finish', async () => {
+        const files = await decompress(zipFile, tmpDir, {
+            filter: (file) => path.extname(file.path) === '.otf'
+        });
+
+        const tables = {};
+
+        for (const file of files) {
+            const basename = path.basename(file.path, '.otf');
+            if (!glyphNameLists[basename]) continue;
+
+            console.log(`Processing ${basename}...`);
+            const buffer = await fs.promises.readFile(path.join(tmpDir, file.path));
+            const font = Font.create(buffer, { type: 'otf', hinting: true, kerning: true });
+
+            tables[basename] = {};
+            for (const glyph of font.get().glyf) {
+                if (!(glyph.unicode instanceof Array)) continue;
+                const unicode = Math.max(...glyph.unicode);
+                const codePoint = glyphNameLists[basename].findIndex((c) => c === glyph.name);
+                if (codePoint !== -1) tables[basename][codePoint] = unicode;
             }
-        } else {
-            const table = await loadEncoding(encoding + '.enc', glyphs);
-            if (table.length != 256) throw `Expected 256 codepoints but received ${table.length}`;
-            tables[encoding] = table;
         }
-    }
 
-    const outputPath = path.join(import.meta.dirname, '../src/tfm/encodings.json');
-    const outputFile = await fs.open(outputPath, 'w');
-    await fs.writeFile(outputFile, JSON.stringify(tables));
-})();
+        console.log(`Processed ${Object.keys(tables).length} fonts.`);
+
+        const encodingsFile = await fs.promises.open(path.join(import.meta.dirname, '../src/tfm/encodings.json'), 'w');
+        await fs.promises.writeFile(encodingsFile, JSON.stringify(tables));
+
+        const fontListFile = await fs.promises.open(path.join(import.meta.dirname, './fontlist.json'), 'w');
+        await fs.promises.writeFile(fontListFile, JSON.stringify(Object.keys(tables)));
+
+        await fs.promises.rm(tmpDir, { recursive: true, force: true });
+    });
+});

@@ -3,7 +3,6 @@ import { Machine, type Rule } from './machine';
 import type { Writable } from 'stream';
 
 import * as glyphs from './tfm/encodings.json';
-import * as fontlist from './tfm/fontlist.json';
 
 export default class HTMLMachine extends Machine {
     output: Writable;
@@ -119,10 +118,9 @@ export default class HTMLMachine extends Machine {
             textHeight = Math.max(textHeight, metrics.height);
             textDepth = Math.max(textDepth, metrics.depth);
 
-            const encoding = fontlist[this.font.name as keyof typeof fontlist];
-            const codes = glyphs[encoding as keyof typeof glyphs];
-            const codepoint = codes[c.toString() as keyof typeof codes];
-            htmlText += `&#${codepoint.toString()};`;
+            const codes = glyphs[this.font.name as keyof typeof glyphs] as Record<string, number>;
+            const codepoint = codes[c.toString()];
+            htmlText += `&#x${codepoint.toString(16).padStart(4, '0')};`;
         }
 
         // tfm is based on 1/2^16 pt units, rather than dviunit which is 10^−7 meters

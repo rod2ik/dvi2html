@@ -1,6 +1,6 @@
 {
     "name": "@drgrice1/dvi2html",
-    "version": "0.0.7-beta3",
+    "version": "0.0.7-beta4",
     "description": "Convert DVI to HTML5/CSS",
     "author": "Jim Fowler",
     "license": "GPL-3.0",
@@ -23,11 +23,11 @@
         "format:check": "prettier --check .",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
-        "build:fonts": "NODE_NO_WARNINGS=1 node tools/tfm2json.js",
         "build:glyphs": "NODE_NO_WARNINGS=1 node tools/glyphs.js",
+        "build:fonts": "NODE_NO_WARNINGS=1 node tools/tfm2json.js",
         "build:lib:dev": "webpack",
         "build:lib": "webpack --mode production",
-        "build": "npm run build:fonts && npm run build:glyphs && npm run build:lib"
+        "build": "npm run build:glyphs && npm run build:fonts && npm run build:lib"
     },
     "files": [
         "dist/**/*"
@@ -38,9 +38,12 @@
     "devDependencies": {
         "@stylistic/eslint-plugin": "^2.12.1",
         "@types/node": "^22.10.5",
+        "decompress": "^4.2.1",
         "eslint": "^9.17.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-webpack-plugin": "^4.2.0",
+        "follow-redirects": "^1.15.9",
+        "fonteditor-core": "^2.4.1",
         "prettier": "^3.4.2",
         "ts-loader": "^9.5.1",
         "typescript": "^5.7.2",
