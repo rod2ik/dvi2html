@@ -1,12 +1,12 @@
 # DVI Parser
 
-This version of `dvi2html` is modified for the [`tikzjax`](https://github.com/drgrice1/tikzjax) project.
+This version of `dvi2html` is modified for the [`tikzjax`](https://github.com/rod2ik/tikzjax) project.
 
 Note that the opentype bakoma fonts are used instead of the truetype fonts because of a glyph issue in the truetype
 fonts. The unicode character `U+00AD` is used to index one of the glyphs in the truetype fonts. That is a soft hyphen
 which is a character that browsers will not show even though that is not what the character is in the font. The opentype
 bakoma fonts also have a glyph issue. They contain invalid out of range glyph indices. As such, to use them the invalid
-glyphs need to be removed. This is done in the [`tikzjax`](https://github.com/drgrice1/tikzjax) project.
+glyphs need to be removed. This is done in the [`tikzjax`](https://github.com/rod2ik/tikzjax) project.
 
 ## Building
 
