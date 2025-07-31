@@ -15,6 +15,8 @@ const myWritable = new Writable({
     }
 });
 
+svg.classList.add("tikzjaz");
+
 (async () => {
     await dvi2html(stream, myWritable);
     fs.writeFileSync(
